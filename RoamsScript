@@ -81,6 +81,7 @@ local function Hebe()
                     root.Transparency = Configuration.HitboxSettings.TransparencyValue
                     root.BrickColor = BrickColor.new(Configuration.HitboxSettings.colar)
                     root.CanCollide = false
+                    root.Massless = true
                 elseif Configuration.HitboxSettings.bibo == "Head" then
                     head.Size = Vector3.new(Configuration.HitboxSettings.SizeValue, Configuration.HitboxSettings.SizeValue, Configuration.HitboxSettings.SizeValue)
                     head.Transparency = Configuration.HitboxSettings.TransparencyValue
