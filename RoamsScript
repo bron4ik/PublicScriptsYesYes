@@ -332,7 +332,7 @@ Cache.LOOPS['Movement'] = RunService.Heartbeat:Connect(function()
     end
 end)
 
-speed:AddToggle({
+spee:AddToggle({
 	enabled = true,
 	text = "Neck Long",
 	flag = "benene",
@@ -356,7 +356,7 @@ speed:AddToggle({
 	risky = false,
 	keycallback = function(v) end
 })
-speed:AddSlider({
+spee:AddSlider({
 	text = "Neck Yes yes", 
 	flag = 'nenenec', 
 	suffix = "", 
