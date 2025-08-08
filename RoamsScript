@@ -1,0 +1,517 @@
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local plrs = game:GetService("Players")
+local plr = plrs.LocalPlayer
+local Players = plrs
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Players = game:GetService("Players")
+
+
+local Configuration = {
+    HitboxSettings = {
+        work = false,
+        bibo = "Head",
+        SizeValue = 1,
+        TransparencyValue = 0.5,
+        colar = Color3.new(1, 0, 0),
+        PlayerData = {},
+    },
+    tpwalkspeed = 0,
+}
+
+local ESPObjects = {}
+
+local isRunning = false
+local scriptLoop = nil
+
+local tpwalking = false
+
+
+local llpr = game:GetService("Players").LocalPlayer.Character
+if not llpr then
+    llpr = game:GetService("Players").LocalPlayer.CharacterAdded:Wait()
+end
+
+local function Hebe()
+    if not Configuration.HitboxSettings.work then
+        for player,data in pairs(Configuration.HitboxSettings.PlayerData) do
+            if player.Character and player.Character:FindFirstChild("BodyHitBox") then
+                local root = player.Character.BodyHitBox
+                local dib = player.Character.HeadHitBox
+                root.Size, root.Transparency = data.Size, data.Transparency
+                if data.Color then root.BrickColor = data.Color end
+                root.CanCollide = data.Collide
+                if dib then
+                    dib.Size, dib.Transparency = data.Size1, data.Transparency1
+                    dib.CanCollide = data.Collide1
+                    if data.Color1 then dib.BrickColor = data.Color1 end
+                end
+            end
+        end
+        Configuration.HitboxSettings.PlayerData = {}
+        return
+    end   
+    
+    
+    for _, playerModel in pairs(Players:GetPlayers()) do
+        if playerModel ~= plr and playerModel.Character then
+        
+            local root = playerModel.Character:FindFirstChild("BodyHitBox")
+            local head = playerModel.Character:FindFirstChild("HeadHitBox")
+            local dib = head
+            --local root = playerModel.character:FindFirstChild("HumanoidRootPart")
+            --local head = playerModel.character:FindFirstChild("Head")
+
+            if not Configuration.HitboxSettings.PlayerData[playerModel] and root and head then
+                    Configuration.HitboxSettings.PlayerData[playerModel] = {
+                    Size = root.Size,
+                    Transparency = root.Transparency,
+                    Color = root.BrickColor,
+                    Size1 = dib.Size,
+                    Transparency1 = dib.Transparency,
+                    Color1 = dib.BrickColor,
+                    Collide = root.CanCollide,
+                    Collide1 = dib.CanCollide,
+                }
+            end
+
+            if root and head and Configuration.HitboxSettings.work then
+                if Configuration.HitboxSettings.bibo == "Body" then
+                    root.Size = Vector3.new(Configuration.HitboxSettings.SizeValue, Configuration.HitboxSettings.SizeValue, Configuration.HitboxSettings.SizeValue)
+                    root.Transparency = Configuration.HitboxSettings.TransparencyValue
+                    root.BrickColor = BrickColor.new(Configuration.HitboxSettings.colar)
+                    root.CanCollide = false
+                elseif Configuration.HitboxSettings.bibo == "Head" then
+                    head.Size = Vector3.new(Configuration.HitboxSettings.SizeValue, Configuration.HitboxSettings.SizeValue, Configuration.HitboxSettings.SizeValue)
+                    head.Transparency = Configuration.HitboxSettings.TransparencyValue
+                    head.BrickColor = BrickColor.new(Configuration.HitboxSettings.colar)
+                    head.CanCollide = false
+                    head.Massless = true
+                end
+            end
+        end
+    end
+end
+
+-- Изменяет размер Part ("HeadHB"), если задан размер
+--[[local function resizeHeadHB(part, targetSize)
+    if part and part.ClassName == "Part" then
+        part.Size = targetSize
+    end
+end
+local function updateHitboxes()
+    while task.wait(2) do
+        if enableHitboxResize then
+            for _, player in ipairs(Players:GetPlayers()) do
+                local char = player.Character
+                if char then
+                    local headHB = char:FindFirstChild("HeadHB")
+                    if headHB and headHB.ClassName == "Part" then
+                        resizeHeadHB(headHB, defaultHeadHBSize)
+                    end
+                end
+            end
+        end
+    end
+end--]]
+local svastik = false
+
+local function uuu()
+    local chr = llpr
+    local hum = chr and chr:FindFirstChildOfClass("Humanoid")
+    if not library.flags["cframe_key"] then
+        svastik = true
+    end
+    if svastik then
+        while tpwalking and library.flags["cframe_key"] and chr and hum and hum.Parent do
+            svastik = false
+            local delta = RunService.Heartbeat:Wait()
+            if hum.MoveDirection.Magnitude > 0 then
+                if Configuration.tpwalkspeed then
+                    chr:TranslateBy(hum.MoveDirection * tonumber(Configuration.tpwalkspeed) * delta * 10)
+                else
+                    chr:TranslateBy(hum.MoveDirection * delta * 10)
+                end
+            end
+        end
+    end
+end
+
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local myTeamColor = LocalPlayer.TeamColor
+local esp = false
+local espp = false
+local tem = false
+local ESPObjects = {}
+
+local function hasValidHighlight(char)
+    if not char then return false end
+    for _, obj in pairs(char:GetChildren()) do
+        if obj:IsA("Highlight") and ESPObjects[obj.Parent.Parent] == obj then
+            return true
+        end
+    end
+    return false
+end
+
+local function animateRainbowColor(highlightInstance)
+    while highlightInstance and highlightInstance.Parent do
+        local currentTime = tick()
+        local hue = currentTime % 5 / 5
+        local color = Color3.fromHSV(hue, 1, 1)
+        highlightInstance.OutlineColor = color
+        task.wait(0.1)
+    end
+end
+
+local function applyHighlightEffect(char, player)
+    if not char or not char.PrimaryPart then return end
+
+    if ESPObjects[player] and ESPObjects[player].Parent == char then
+        local hl = ESPObjects[player]
+        hl.FillTransparency = 1
+        hl.OutlineTransparency = 0.75
+        
+        if tem then
+            if player.TeamColor ~= myTeamColor then
+                coroutine.resume(coroutine.create(animateRainbowColor), hl)
+            else
+                hl:Destroy()
+                ESPObjects[player] = nil
+            end
+        else
+            coroutine.resume(coroutine.create(animateRainbowColor), hl)
+        end
+        return
+    end
+
+    for _, obj in pairs(char:GetChildren()) do
+        if obj:IsA("Highlight") then
+            obj:Destroy()
+        end
+    end
+
+    if tem then
+        if player.TeamColor ~= myTeamColor then
+            local hl = Instance.new("Highlight", char)
+            hl.FillTransparency = 1
+            hl.OutlineTransparency = 0.75
+            ESPObjects[player] = hl
+            coroutine.resume(coroutine.create(animateRainbowColor), hl)
+        end
+    else
+        local hl = Instance.new("Highlight", char)
+        hl.FillTransparency = 1
+        hl.OutlineTransparency = 0.75
+        ESPObjects[player] = hl
+        coroutine.resume(coroutine.create(animateRainbowColor), hl)
+    end
+end
+
+local function updateHighlights()
+    if esp and espp then
+        for _, player in ipairs(Players:GetPlayers()) do
+            if player ~= LocalPlayer then
+                local char = player.Character
+                if char then
+                    local needsUpdate = true
+                    if ESPObjects[player] and ESPObjects[player].Parent == char then
+                        if tem then
+                            needsUpdate = (player.TeamColor ~= myTeamColor)
+                        else
+                            needsUpdate = false
+                        end
+                    end
+                    
+                    if needsUpdate then
+                        applyHighlightEffect(char, player)
+                    end
+                end
+            end
+        end
+    else
+        for player, hl in pairs(ESPObjects) do
+            if hl and hl.Parent then
+                hl:Destroy()
+            end
+        end
+        ESPObjects = {}
+    end
+end
+
+Players.PlayerRemoving:Connect(function(player)
+    if ESPObjects[player] then
+        ESPObjects[player]:Destroy()
+        ESPObjects[player] = nil
+    end
+end)
+
+LocalPlayer.Changed:Connect(function(prop)
+    if prop == "Team" then
+        myTeamColor = LocalPlayer.TeamColor
+        updateHighlights()
+    end
+end)
+
+Players.PlayerAdded:Connect(function(player)
+    player.CharacterAdded:Connect(function(char)
+        if esp and espp and player ~= LocalPlayer then
+            applyHighlightEffect(char, player)
+        end
+    end)
+end)
+
+
+
+
+
+game:GetService("Players").LocalPlayer.CharacterAdded:Connect(function(character)
+    llpr = character
+end)
+
+
+
+local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/drillygzzly/Other/main/1"))()
+
+getgenv().Config = {
+	Invite = "Roams Script Source",
+	Version = "1.0",
+}
+
+getgenv().luaguardvars = {
+	DiscordName = "Source",
+}
+
+
+library:init() -- Initalizes Library Do Not Delete This
+
+local Window = library.NewWindow({
+	title = "Roams script",
+	size = UDim2.new(0, 525, 0, 650)
+})
+
+local tabs = {
+    Tab1 = Window:AddTab("Combat Tab"),
+    Tab2 = Window:AddTab("Esp tab"),
+    Tab3 = Window:AddTab("Movement + Hacks"),
+	Settings = library:CreateSettingsTab(Window),
+}
+
+-- 1 = Set Section Box To The Left
+-- 2 = Set Section Box To The Right
+
+local sections = {
+	Section1 = tabs.Tab1:AddSection("Hit Box", 1),
+}
+
+local pl = tabs.Tab2:AddSection("Esp", 1)
+local speed = tabs.Tab3:AddSection("SpeedHack", 1)
+local spee = tabs.Tab3:AddSection("Long Neck", 2)
+
+local hip = 3
+local normalhip = 2.192
+local bebra = false
+
+local Cache = {
+    LOOPS = {
+
+    }
+}
+
+Cache.LOOPS['Movement'] = RunService.Heartbeat:Connect(function()
+    if bebra and hip and library.flags["hip_key"] then
+        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild('Humanoid') then
+            LocalPlayer.Character.Humanoid.HipHeight = hip
+        end
+    end
+    if not bebra or not library.flags["hip_key"] then
+        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild('Humanoid') then
+            LocalPlayer.Character.Humanoid.HipHeight = normalhip
+        end
+    end
+end)
+
+speed:AddToggle({
+	enabled = true,
+	text = "Neck Long",
+	flag = "benene",
+	tooltip = "Makes u fast like superman",
+	risky = false, -- turns text to red and sets label to risky
+	callback = function(lol) 
+        bebra = lol
+        if not bebra or not library.flags["hip_key"] then
+            if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild('Humanoid') then
+                LocalPlayer.Character.Humanoid.HipHeight = normalhip
+            end
+        end
+    end
+}):AddBind({
+	flag = "hip_key",
+	nomouse = true,
+	noindicator = false,
+	tooltip = "Change Keybind",
+	mode = "toggle",
+	bind = Enum.KeyCode.G,
+	risky = false,
+	keycallback = function(v) end
+})
+speed:AddSlider({
+	text = "Neck Yes yes", 
+	flag = 'nenenec', 
+	suffix = "", 
+	value = 3,
+	min = 0, 
+	max = 200,
+	increment = 1,
+	tooltip = "neck long yes yes",
+	risky = false,
+	callback = function(v) 
+        hip = v
+        
+    end
+})
+
+speed:AddToggle({
+	enabled = true,
+	text = "Cframe speedhack",
+	flag = "spider",
+	tooltip = "Makes u fast like superman",
+	risky = false, -- turns text to red and sets label to risky
+	callback = function(lol) 
+        tpwalking = lol
+    end
+}):AddBind({
+	flag = "cframe_key",
+	nomouse = true,
+	noindicator = false,
+	tooltip = "Change Keybind",
+	mode = "toggle",
+	bind = Enum.KeyCode.V,
+	risky = false,
+	keycallback = function(v) end
+})
+
+speed:AddSlider({
+	text = "Speedhack dildo", 
+	flag = 'SpeedSpedd', 
+	suffix = "", 
+	value = 0,
+	min = 0, 
+	max = 2,
+	increment = 0.1,
+	tooltip = "Makes u faster superman",
+	risky = false,
+	callback = function(v) 
+        Configuration.tpwalkspeed = v
+    end
+})
+
+
+sections.Section1:AddToggle({
+	enabled = true,
+	text = "Hit Dick",
+	flag = "T",
+	tooltip = "Tooltip1",
+	risky = false, -- turns text to red and sets label to risky
+	callback = function(lol) 
+        Configuration.HitboxSettings.work = lol
+    end
+})
+sections.Section1:AddList({
+	enabled = true,
+	text = "Part",
+	flag = "L",
+	multi = false,
+	tooltip = "Tooltip1",
+    risky = false,
+    dragging = false,
+    focused = false,
+	value = "Head",
+	values = {
+		"Body",
+		"Head",
+	},
+	callback = function(v) 
+        Configuration.HitboxSettings.bibo = v
+    end
+})
+
+sections.Section1:AddSlider({
+	text = " Size", 
+	flag = 'S', 
+	suffix = "", 
+	value = 1,
+	min = 1, 
+	max = 50,
+	increment = 1,
+	tooltip = "Tooltip1",
+	risky = false,
+	callback = function(v) 
+        Configuration.HitboxSettings.SizeValue = v
+    end
+})
+sections.Section1:AddColor({
+    enabled = true,
+    text = "Hit Dick color",
+    flag = "Color",
+    tooltip = "ToolTip1",
+    color = Color3.new(1, 0, 0),
+    trans = 0,
+    open = false,
+    callback = function(g)
+        Configuration.HitboxSettings.colar = g
+    end
+})
+
+sections.Section1:AddSlider({
+	text = " Transparency", 
+	flag = 'Sb', 
+	suffix = "", 
+	value = 0.5,
+	min = 0, 
+	max = 1,
+	increment = 0.1,
+	tooltip = "Tooltip1",
+	risky = false,
+	callback = function(v) 
+        Configuration.HitboxSettings.TransparencyValue = v
+    end
+})
+
+pl:AddToggle({
+	enabled = true,
+	text = "Enable ESP",
+	flag = "esp_enable",
+	tooltip = "esp",
+	risky = false, -- turns text to red and sets label to risky
+	callback = function(lol)
+        esp =lol
+    end
+})
+pl:AddToggle({
+	enabled = true,
+	text = "Higlight",
+	flag = "esp",
+	tooltip = "esp",
+	risky = false, -- turns text to red and sets label to risky
+	callback = function(lol) 
+        espp =lol
+    end
+})
+pl:AddToggle({
+	enabled = true,
+	text = "Team Check",
+	flag = "tem",
+	tooltip = "Team Check",
+	risky = false, -- turns text to red and sets label to risky
+	callback = function(lol) 
+        tem = lol
+    end
+})
+
+RunService.RenderStepped:Connect(function()
+    Hebe()
+    uuu()
+    updateHighlights()
+end)
